@@ -143,6 +143,48 @@ export const CITIES_DATA = {
   },
 };
 
+export const CITY_LIST = Object.freeze(Object.values(CITIES_DATA));
+
+export function getAqiTheme(aqi) {
+  if (aqi <= 100) {
+    return {
+      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+      ring: 'border-amber-500',
+      numberColor: 'text-amber-700',
+      cardTint: 'from-amber-50 to-orange-50/40',
+    };
+  }
+  if (aqi <= 150) {
+    return {
+      badgeBg: 'bg-orange-100 text-orange-900 border-orange-300',
+      ring: 'border-orange-500',
+      numberColor: 'text-orange-700',
+      cardTint: 'from-orange-50 to-red-50/40',
+    };
+  }
+  if (aqi <= 200) {
+    return {
+      badgeBg: 'bg-rose-100 text-rose-900 border-rose-300',
+      ring: 'border-rose-600',
+      numberColor: 'text-rose-700',
+      cardTint: 'from-rose-50 to-amber-50/30',
+    };
+  }
+  return {
+    badgeBg: 'bg-purple-100 text-purple-900 border-purple-300',
+    ring: 'border-purple-600',
+    numberColor: 'text-purple-800',
+    cardTint: 'from-purple-50 to-rose-50/40',
+  };
+}
+
+export function getHourlyBarColor(aqi) {
+  if (aqi > 200) return 'bg-purple-600';
+  if (aqi > 150) return 'bg-rose-600';
+  if (aqi > 100) return 'bg-amber-500';
+  return 'bg-emerald-600';
+}
+
 export function sanitizeUserPrompt(rawInput, maxLength = 400) {
   if (typeof rawInput !== 'string') return '';
   return rawInput
@@ -218,4 +260,89 @@ export function calculateSustainabilityImpact(completedHabits, oneWayKm) {
 export function calculateRecommendedCadr(roomSizeSqFt) {
   const safeArea = Math.max(50, Math.min(2000, Number(roomSizeSqFt) || 100));
   return Math.round(safeArea * 0.85);
+}
+
+export function buildThreePillarRecommendations(city, familyProfile) {
+  const highPollution = city.aqi > 150;
+  const savedKgCo2 = (familyProfile.commuteKm * 2 * 0.145).toFixed(1);
+  const vulnerableNote =
+    familyProfile.hasKids || familyProfile.hasSeniors
+      ? '—especially vital for children and seniors in your home'
+      : '';
+
+  return [
+    {
+      id: 'exercise',
+      iconKey: 'heart',
+      title: highPollution
+        ? 'Shift Morning Exercise & Kids Play Indoors'
+        : 'Schedule Outdoor Activity in Afternoon Window',
+      situation: `${city.name} is at AQI ${city.aqi} (${city.status}) with peak PM2.5 (${city.pm25} µg/m³) during ${city.peakHours}.`,
+      action: highPollution
+        ? `Replace outdoor jogging or park play before 11 AM with indoor yoga, stretching, or playroom games${vulnerableNote}.`
+        : `Plan outdoor walks or children's cycling strictly during ${city.safeWindow} when surface smog disperses.`,
+      impact: highPollution
+        ? 'Reduces high-breathing-rate PM2.5 inhalation by up to 65–75% during morning rush spikes.'
+        : 'Cuts peak roadside particulate exposure by ~40% compared to morning rush hours.',
+    },
+    {
+      id: 'commute',
+      iconKey: 'train',
+      title: 'Switch Daily Commute to Metro / Carpool',
+      situation: `Morning traffic along major corridors adds concentrated NO2 (${city.no2} ppb) and tailpipe aerosols on your ${familyProfile.commuteKm} km route.`,
+      action: 'Take Metro Rail, electric bus, or a 3-person carpool instead of a solo petrol/diesel car trip today.',
+      impact: `Avoids an estimated ~${savedKgCo2} kg of personal transport CO2 emissions per round trip while lowering your cabin exposure to bumper-to-bumper exhaust.`,
+    },
+    {
+      id: 'ventilation',
+      iconKey: 'wind',
+      title: 'Timed Window Sealing & Cross-Ventilation',
+      situation: `Cold, stagnant morning and late-evening air traps fine particles outside, while midday warmth (${city.temp}) lifts the inversion layer.`,
+      action: `Keep balcony doors and road-facing windows closed during ${city.peakHours}; open windows for 30–45 mins during ${city.safeWindow} to flush indoor CO2.`,
+      impact: 'Prevents outdoor PM2.5 infiltration during peaks while preventing stale indoor air buildup.',
+    },
+    {
+      id: 'purifier',
+      iconKey: 'shield',
+      title: familyProfile.hasPurifier
+        ? 'Run HEPA Purifier on Auto/Medium in Active Room'
+        : 'Zero-Cost Indoor Dust & Smoke Control',
+      situation: `At PM2.5 ${city.pm25} µg/m³, indoor particle levels typically reach 60–80% of outdoor smog without filtration.`,
+      action: familyProfile.hasPurifier
+        ? `Run a True HEPA H13 purifier (CADR >= ${calculateRecommendedCadr(
+            familyProfile.roomSizeSqFt
+          )} m³/h) in the bedroom/living room with doors closed, plus wet-mop floors instead of dry sweeping.`
+        : 'Wet-mop floors daily, use kitchen exhaust during frying, avoid incense/mosquito coils, and keep damp indoor plants near entryways.',
+      impact:
+        'HEPA filtration can reduce indoor airborne PM2.5 by 70–85% within 45 minutes; wet mopping prevents dust resuspension.',
+    },
+  ];
+}
+
+export function buildFallbackChatReply({ city, familyProfile, lang }) {
+  const savedCo2 = (familyProfile.commuteKm * 2 * 0.143).toFixed(1);
+
+  if (lang === 'te') {
+    return `📍 ప్రస్తుత పరిస్థితి (${city.name}): ఉదాహరణ AQI ${city.aqi} (${city.status}) గా ఉంది. PM2.5 (${city.pm25} µg/m³) ఎక్కువగా ఉంటుంది.
+
+✅ కుటుంబ సూచన: ${city.peakHours} సమయంలో పిల్లలు మరియు పెద్దలను ఇంటి లోపలే ఉంచండి. కిటికీలు తెరవడానికి ${city.safeWindow} ఉత్తమ సమయం.
+
+🌱 ప్రయోజనం: ఇంట్లో కాలుష్య ప్రభావం ~65% తగ్గుతుంది మరియు మెట్రో వాడటం ద్వారా సుమారు ${savedCo2} kg CO2 ఉద్గారాలను తగ్గించవచ్చు.`;
+  }
+
+  if (lang === 'hi') {
+    return `📍 वर्तमान स्थिति (${city.name}): उदाहरण AQI ${city.aqi} (${city.status}) है, जिसमें PM2.5 (${city.pm25} µg/m³) अधिक रहता है।
+
+✅ परिवार के लिए कदम: ${city.peakHours} के दौरान बच्चों और बुजुर्गों को बाहर जाने से बचाएं। खिड़कियां खोलने के लिए ${city.safeWindow} सबसे सुरक्षित समय है।
+
+🌱 प्रभाव: घर के अंदर प्रदूषण का संपर्क ~65% कम होता है, और मेट्रो अपनाने से लगभग ${savedCo2} kg CO2 उत्सर्जन बचता है।`;
+  }
+
+  return `📍 Current Situation (${city.name}): Illustrative AQI is ${city.aqi} (${city.status}) with PM2.5 at ${city.pm25} µg/m³.
+
+✅ Recommended Action: Keep vigorous outdoor activity paused during ${city.peakHours}. Aim for ${city.safeWindow} for safer outdoor air.
+
+🌱 Measurable Impact: Cuts peak exposure substantially while taking Metro instead of a solo car for your ${
+    familyProfile.commuteKm * 2
+  } km round trip avoids an estimated ${savedCo2} kg of CO2 emissions.`;
 }

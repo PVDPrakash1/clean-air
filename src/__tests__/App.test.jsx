@@ -2,10 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from '../App';
 import {
+  CITIES_DATA,
   sanitizeUserPrompt,
   calculateCommuteMetrics,
   calculateSustainabilityImpact,
   calculateRecommendedCadr,
+  buildThreePillarRecommendations,
+  buildFallbackChatReply,
+  getAqiTheme,
 } from '../utils/airQualityEngine';
 
 beforeEach(() => {
@@ -52,6 +56,26 @@ describe('ClearAir AI Core Calculation Engine', () => {
     expect(calculateRecommendedCadr(200)).toBe(170);
     expect(calculateRecommendedCadr(400)).toBe(340);
   });
+
+  it('builds tailored 3-pillar recommendations and multilingual fallback replies', () => {
+    const recs = buildThreePillarRecommendations(CITIES_DATA.hyderabad_west, {
+      commuteKm: 15,
+      hasKids: true,
+      hasSeniors: false,
+      hasPurifier: true,
+      roomSizeSqFt: 300,
+    });
+    expect(recs).toHaveLength(4);
+    expect(recs[3].action).toContain('255 m³/h');
+
+    const teReply = buildFallbackChatReply({
+      city: CITIES_DATA.hyderabad_west,
+      familyProfile: { commuteKm: 10 },
+      lang: 'te',
+    });
+    expect(teReply).toContain('ప్రస్తుత పరిస్థితి');
+    expect(getAqiTheme(312).numberColor).toContain('purple');
+  });
 });
 
 describe('ClearAir AI UI, Accessibility & Multilingual Flows', () => {
@@ -84,7 +108,7 @@ describe('ClearAir AI UI, Accessibility & Multilingual Flows', () => {
     fireEvent.click(chatTab);
     expect(chatTab).toHaveAttribute('aria-selected', 'true');
 
-    const input = screen.getByLabelText(/Ask ClearAir AI a question/i);
+    const input = await screen.findByLabelText(/Ask ClearAir AI a question/i);
     fireEvent.change(input, { target: { value: 'Can kids play outside?' } });
     fireEvent.submit(input.closest('form'));
 

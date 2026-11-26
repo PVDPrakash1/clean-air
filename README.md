@@ -2,59 +2,26 @@
 
 **Tagline:** *Breathe Better. Live Smarter. Build a Cleaner Future.*
 
-ClearAir AI is a location-aware, GenAI-powered environmental assistant designed to help families and communities respond to urban air pollution and winter smog through practical daily decisions. Rather than only displaying AQI numbers, it connects:
+ClearAir AI is a location-aware, GenAI-powered environmental assistant designed to help families and communities respond to urban air pollution and winter smog through practical daily decisions.
 
-1. **Current Situation** – What is happening in the user's area (illustrative AQI, $\text{PM}_{2.5}$, $\text{PM}_{10}$, $\text{NO}_2$, peak smog hours, and safer midday windows).
-2. **Personal Action** – Tailored steps based on family health sensitivity (children, seniors, asthma), daily commute distance, room size, and purifier availability.
-3. **Measurable Impact** – Estimated personal transport $\text{CO}_2$ avoided and direct exposure reduction, clearly distinguishing estimated emission savings from immediate changes to city-wide AQI.
+## Key Enhancements (v2.0)
 
----
+* **Subfolder Deployment Ready (`pvdprakash.com/clean-air`):** Pre-configured with `base: '/clean-air/'` in `vite.config.js` and matching `RewriteBase /clean-air/` in `public/.htaccess`.
+* **Automated Testing Suite:** Includes Vitest + React Testing Library unit and UI tests (`npm test`) covering AQI locality switching, multilingual UI, commute emission calculations, CADR purifier sizing, and GenAI chat fallback behavior.
+* **Security Hardening:** Includes Content Security Policy (CSP) headers, Apache security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`), prompt sanitization, request rate limiting, and an optional Node.js backend proxy (`server/proxy.js`).
+* **WCAG / WAI-ARIA Accessibility:** Full `tablist`/`tab`/`tabpanel` keyboard semantics, explicit form labels, `aria-live` regions, skip-to-content link, and high-contrast color tokens.
 
-## Key Features
+## Run Locally & Run Tests
 
-* **Real-Time Air Quality Assistant:** Locality selector (including Hyderabad localities, Delhi NCR, Bengaluru, and Mumbai), illustrative AQI badge, pollutant breakdowns ($\text{PM}_{2.5}$, $\text{PM}_{10}$, $\text{NO}_2$), and a 24-hour pollution curve highlighting high-risk vs. safer hours.
-* **3-Pillar Action Plan:** Dynamic recommendations linking local conditions, household actions, and measurable health/emission outcomes.
-* **Smart Daily Routine & Commute Planner:** Compares Metro/Public Transit, Shared Carpool, Work/Study From Home, and Solo Car trips for estimated $\text{CO}_2$ emissions and roadside exposure, alongside school/office timing guidance.
-* **Indoor Air Quality Advisor:** Low-cost/zero-cost indoor air tips (wet mopping, kitchen ventilation, avoiding indoor smoke) plus a True HEPA H13 purifier CADR room-sizing calculator.
-* **Sustainability Impact Tracker:** Interactive daily habit checklist estimating household $\text{CO}_2$ avoided, monthly pace, personal exposure shield percentage, and community-scale context.
-* **GenAI Family Assistant:** Context-aware chat supporting **English**, **Telugu (తెలుగు)**, and **Hindi (हिंदी)** via Google Gemini (`gemini-2.5-flash`), with built-in localized fallback responses when no API key is set.
+```bash
+npm install
+npm test
+npm run dev
+```
 
----
+## Build & Deploy to GoDaddy (`pvdprakash.com/clean-air`)
 
-## Run Locally
-
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Configure Gemini API Key (Optional):**
-   Add your API key from Google AI Studio to `.env`:
-   ```env
-   VITE_GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-   *(If left as-is, the chat assistant still works using smart local fallback responses.)*
-
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-   Open the local URL shown in the terminal (typically `http://localhost:5173`).
-
----
-
-## Build & Deploy to GoDaddy
-
-1. **Build the production bundle:**
-   ```bash
-   npm run build
-   ```
-   This creates the `dist/` folder along with `public/.htaccess` for Single-Page Application (SPA) routing.
-
-2. **Upload to GoDaddy (cPanel):**
-   * Log in to GoDaddy → **My Products** → **Web Hosting** → **Manage** → **cPanel Admin** → **File Manager**.
-   * Open **`public_html`** (enable **Show Hidden Files** in Settings so `.htaccess` is visible).
-   * Upload all files and folders from inside `dist/` (extract `assets` if zipped).
-   * Ensure **SSL (HTTPS)** is active on your domain.
-
-*(Note: For client-side demos, restrict your Gemini API key in Google Cloud / AI Studio to your domain via HTTP referrers; for production apps, proxy API calls through a backend service such as FastAPI or Node.js.)*
+1. Run `npm run build` to generate the `dist/` folder.
+2. In GoDaddy cPanel **File Manager**, open `public_html` and create a folder named `clean-air`.
+3. Enable **Show Hidden Files** in File Manager Settings, then upload all contents of `dist/` (including `.htaccess` and `assets/`) into `public_html/clean-air/`.
+4. Visit `https://pvdprakash.com/clean-air/`.
